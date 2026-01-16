@@ -59,27 +59,33 @@ def train_alphazero(
             examples.extend(episode_examples)
             results.append(episode_result)
 
-        # --- 統計出力 ---
+        # --- 統計出力 ----
         scores = [r['score'] for r in results]
         all_chain_events = [c for r in results for c in r['chain_events']]
         if all_chain_events:
             avg_chain_per_event = sum(all_chain_events) / len(all_chain_events)
         else:
             avg_chain_per_event = 0.0
+
         avg_chains = [r['avg_chain'] for r in results]
         no_chain_count = sum(1 for c in avg_chains if c == 0.0)
         no_chain_rate = no_chain_count / len(avg_chains)  # 割合（0.0-1.0）
+
         max_chains = [r['max_chain'] for r in results]
+        ave_max_chain = np.mean(max_chains) if max_chains else 0.0    # ★新規追加（エピソードごとの最大連鎖数の平均）
+        max_chain_overall = max(max_chains) if max_chains else 0
+
         moves = [r['moves'] for r in results]
         total_score = sum(scores)
         total_moves = sum(moves)
         avg_score = np.mean(scores)
-        max_chain_overall = max(max_chains) if max_chains else 0
         avg_moves = np.mean(moves)
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
         print("="*20 + f" Iteration {iteration+1} Summary " + "="*20)
         print(f"平均スコア: {avg_score:.2f}")
         print(f"平均連鎖/イベント: {avg_chain_per_event:.2f}")
+        print(f"最大連鎖の平均: {ave_max_chain:.2f}")           # ★ ave_max_chainを表示
         print(f"最大連鎖: {max_chain_overall}")
         print(f"連鎖なし率: {no_chain_rate:.2%}")
         print(f"平均手数: {avg_moves:.2f}")
@@ -97,6 +103,7 @@ def train_alphazero(
                     'iteration',
                     'avg_score',
                     'avg_chain_per_event',
+                    'ave_max_chain',         # ★追加
                     'max_chain',
                     'no_chain_rate',
                     'avg_moves',
@@ -108,8 +115,9 @@ def train_alphazero(
                 iteration+1,
                 f"{avg_score:.2f}",
                 f"{avg_chain_per_event:.2f}",
+                f"{ave_max_chain:.2f}",     # ★追加
                 max_chain_overall,
-                f"{no_chain_rate:.2%}",  # → "33.33%" 風な表記
+                f"{no_chain_rate:.2%}",
                 f"{avg_moves:.2f}",
                 total_score,
                 total_moves,
